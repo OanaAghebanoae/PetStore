@@ -1,0 +1,52 @@
+<div>
+  <h2>Available Pets</h2>
+  <form [formGroup]="petsForm">
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody formArrayName="pets">
+        <tr *ngFor="let pet of pets.controls; let i = index" [formGroupName]="i">
+          <td>{{ pet.get('id')?.value }}</td>
+          <td>
+            <input formControlName="name" />
+          </td>
+          <td>
+            <input formControlName="status" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+</div>
+
+<div>
+  <h2>Add New Pet</h2>
+  <form [formGroup]="newPetForm" (ngSubmit)="addPet()">
+    <div>
+      <label for="newPetName">Name:</label>
+      <input id="newPetName" formControlName="name" required />
+      <div
+        *ngIf="newPetForm.get('name')?.invalid && (newPetForm.get('name')?.touched || newPetForm.get('name')?.dirty)">
+        <span *ngIf="newPetForm.get('name')?.errors?.['required']">Name is required.</span>
+        <span *ngIf="newPetForm.get('name')?.errors?.['mustContainOnlyLetters']">Name must contain only letters.</span>
+      </div>
+    </div>
+
+    <div>
+      <label for="newPetStatus">Status:</label>
+      <input id="newPetStatus" formControlName="status" required />
+      <div
+        *ngIf="newPetForm.get('status')?.invalid && (newPetForm.get('status')?.touched || newPetForm.get('status')?.dirty)">
+        <span *ngIf="newPetForm.get('status')?.errors?.['required']">Status is required.</span>
+        <span *ngIf="newPetForm.get('status')?.errors?.['invalidValue']">Status must be 'available', 'pending' or 'sold'.</span>
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="newPetForm.invalid || newPetForm.pending">Add Pet</button>
+  </form>
+</div>
