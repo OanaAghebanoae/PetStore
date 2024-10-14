@@ -9,9 +9,13 @@ import { Pet } from '../pet-store/models/pet.model';
 export class PetService {
   private apiUrl = 'https://petstore.swagger.io/v2/pet';
 
-  constructor(private httpClient: HttpClient) {}
+  constructor(private httpClient: HttpClient) { }
 
   addPet(pet: Pet): Observable<Pet> {
     return this.httpClient.post<Pet>(this.apiUrl, pet);
+  }
+
+  editPet(pet: Pet): Observable<Pet> {
+    return this.httpClient.put<Pet>(this.apiUrl, pet);
   }
 }

@@ -5,6 +5,7 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { CommonModule } from '@angular/common';
 import { CustomValidators } from '../../validators/custom-validators';
 import { PetService } from '../services/pet-service.service';
+import { catchError, combineLatestWith, debounceTime, delay, finalize, of, startWith, switchMap, take, tap, zip } from 'rxjs';
 
 @Component({
   selector: 'app-pet-store',
@@ -39,17 +40,46 @@ export class PetStoreComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => {
       subscription.unsubscribe();
-    })
+    });
+
+    const nameControl = this.newPetForm.get('name');
+    const statusControl = this.newPetForm.get('status');
+
+    if (nameControl && statusControl) {
+      nameControl.valueChanges.pipe(
+        startWith(nameControl.value),
+        debounceTime(300),
+        combineLatestWith(
+          statusControl.valueChanges.pipe(
+            startWith(statusControl.value)
+          )
+        )
+      ).subscribe(([nameValue, statusValue]) => {
+        console.log(`Name: ${nameValue}, Status: ${statusValue}`);
+      });
+    }
+
+    // if (nameControl && statusControl) {
+    //   zip(
+    //     nameControl.valueChanges.pipe(startWith(nameControl.value)),
+    //     statusControl.valueChanges.pipe(startWith(statusControl.value))
+    //   ).subscribe(([nameValue, statusValue]) => {
+    //     console.log(`Name: ${nameValue}, Status: ${statusValue}`);
+    //   });
+    // }
   }
 
   private initializeForm(): void {
     this.petsForm = this.fb.group({
       pets: this.fb.array([])
     })
-    
+
     this.newPetForm = this.fb.group({
       name: ['', [Validators.required, CustomValidators.mustContainOnlyLetters]],
-      status: ['', [Validators.required, CustomValidators.mustHaveOneOfValues(['available', 'pending', 'sold'])]]
+      status: ['', {
+        validators: [Validators.required],
+        asyncValidators: [CustomValidators.mustHaveOneOfValues(['available', 'pending', 'sold'])]
+      }]
     });
   }
 
@@ -67,28 +97,84 @@ export class PetStoreComponent implements OnInit {
     this.petsForm.setControl('pets', petFormArray);
   }
 
+  // addPet() {
+  //   if (this.newPetForm.valid) {
+  //     const newPet = this.newPetForm.value as Pet;
+  //     this.petService.addPet(newPet).pipe(
+  //       catchError((error) => {
+  //         console.error('Error adding pet:', error);
+  //         return of(null);
+  //       })
+  //     ).subscribe({
+  //       next: (res) => {
+  //         if (res) {
+  //           console.log('Pet added successfully:', res);
+  //           this.pets.push(this.fb.group({
+  //             id: [res.id],
+  //             name: [res.name, [Validators.required, CustomValidators.mustContainOnlyLetters]],
+  //             status: [res.status, {
+  //               validators: [Validators.required],
+  //               asyncValidators: [CustomValidators.mustHaveOneOfValues(['available', 'pending', 'sold'])]
+  //             }]
+  //           }));
+
+  //           this.newPetForm.reset();
+  //         }
+  //       }
+  //     });
+  //   }
+  // }
+
   addPet() {
     if (this.newPetForm.valid) {
       const newPet = this.newPetForm.value as Pet;
-      this.petService.addPet(newPet).subscribe({
-        next: (res) => {
+  
+      this.petService.addPet(newPet).pipe(
+        switchMap((res) => {
           console.log('Pet added successfully:', res);
-
+  
           this.pets.push(this.fb.group({
             id: [res.id],
             name: [res.name, [Validators.required, CustomValidators.mustContainOnlyLetters]],
-            status: [res.status, {validators: [Validators.required],
-              asyncValidators: [ CustomValidators.mustHaveOneOfValues(['available', 'pending', 'sold'])]
+            status: [res.status, {
+              validators: [Validators.required],
+              asyncValidators: [CustomValidators.mustHaveOneOfValues(['available', 'pending', 'sold'])]
             }]
           }));
-
+  
+          return this.httpClient.get<Pet[]>('https://petstore.swagger.io/v2/pet/findByStatus?status=available').pipe(
+            tap(() => console.log('Fetching updated pet list...')),
+            delay(1000),
+            take(1)
+          );
+        }),
+        catchError((error) => {
+          console.error('Error adding pet:', error);
+          return of(null);
+        }),
+        finalize(() => {
+          console.log('Pet adding process completed.');
+        })
+      ).subscribe({
+        next: (updatedPets) => {
+          if (updatedPets) {
+            console.log('Updated list of pets:', updatedPets);
+            this.setPets(updatedPets);
+          }
           this.newPetForm.reset();
-        },
-        error: (err) => {
-          console.error('Error adding pet:', err);
         }
       });
     }
+  }
+
+  editPet(index: number): void {
+    const petFormGroup = this.pets.at(index) as FormGroup;
+
+    this.petService.editPet(petFormGroup.value as Pet).subscribe({
+      next: (res) => {
+        console.log(`Editing pet at index ${index}`, petFormGroup.value);
+      }
+    });
   }
 }
 

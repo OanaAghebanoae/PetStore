@@ -7,6 +7,7 @@
           <th>ID</th>
           <th>Name</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody formArrayName="pets">
@@ -17,6 +18,11 @@
           </td>
           <td>
             <input formControlName="status" />
+          </td>
+          <td>
+            <button type="button" (click)="editPet(i)">
+              <i class="fa fa-edit"></i> Edit
+            </button>
           </td>
         </tr>
       </tbody>
