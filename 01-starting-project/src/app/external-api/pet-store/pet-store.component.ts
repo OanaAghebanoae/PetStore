@@ -6,11 +6,14 @@ import { CommonModule } from '@angular/common';
 import { CustomValidators } from '../../validators/custom-validators';
 import { PetService } from '../services/pet-service.service';
 import { catchError, combineLatestWith, debounceTime, delay, finalize, of, startWith, switchMap, take, tap, zip } from 'rxjs';
+import { OnlyLettersDirective } from '../../directives/only-letters.directive';
+import { ShowIfAvailableDirective } from '../../directives/show-if-available.directive';
+import { CapitalizeFirstDirective } from '../../directives/capitalize-first.directive';
 
 @Component({
   selector: 'app-pet-store',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, OnlyLettersDirective, ShowIfAvailableDirective, CapitalizeFirstDirective],
   templateUrl: './pet-store.component.html',
   styleUrl: './pet-store.component.css'
 })
@@ -29,6 +32,7 @@ export class PetStoreComponent implements OnInit {
     this.initializeForm();
 
     const subscription = this.httpClient.get<Pet[]>('https://petstore.swagger.io/v2/pet/findByStatus?status=available').subscribe({
+    //const subscription = this.httpClient.get<Pet[]>('https://petstore.swagger.io/v2/pet/findByStatus?status=sold').subscribe({
       next: (resData) => {
         console.log("available pets: ", resData);
         this.setPets(resData);

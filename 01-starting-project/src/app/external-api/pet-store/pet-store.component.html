@@ -11,20 +11,24 @@
         </tr>
       </thead>
       <tbody formArrayName="pets">
-        <tr *ngFor="let pet of pets.controls; let i = index" [formGroupName]="i">
-          <td>{{ pet.get('id')?.value }}</td>
-          <td>
-            <input formControlName="name" />
-          </td>
-          <td>
-            <input formControlName="status" />
-          </td>
-          <td>
-            <button type="button" (click)="editPet(i)">
-              <i class="fa fa-edit"></i> Edit
-            </button>
-          </td>
-        </tr>
+        <ng-container *ngFor="let pet of pets.controls; let i = index">
+          <ng-container *appShowIfAvailable="pet.get('status')?.value">
+            <tr [formGroupName]="i">
+              <td>{{ pet.get('id')?.value }}</td>
+              <td>
+                <input formControlName="name" [appCapitalizeFirst]="pet.get('name')?.value"/>
+              </td>
+              <td>
+                <input formControlName="status" />
+              </td>
+              <td>
+                <button type="button" (click)="editPet(i)">
+                  <i class="fa fa-edit"></i> Edit
+                </button>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
       </tbody>
     </table>
   </form>
@@ -35,7 +39,7 @@
   <form [formGroup]="newPetForm" (ngSubmit)="addPet()">
     <div>
       <label for="newPetName">Name:</label>
-      <input id="newPetName" formControlName="name" required />
+      <input id="newPetName" formControlName="name" required appOnlyLetters />
       <div
         *ngIf="newPetForm.get('name')?.invalid && (newPetForm.get('name')?.touched || newPetForm.get('name')?.dirty)">
         <span *ngIf="newPetForm.get('name')?.errors?.['required']">Name is required.</span>
@@ -49,7 +53,8 @@
       <div
         *ngIf="newPetForm.get('status')?.invalid && (newPetForm.get('status')?.touched || newPetForm.get('status')?.dirty)">
         <span *ngIf="newPetForm.get('status')?.errors?.['required']">Status is required.</span>
-        <span *ngIf="newPetForm.get('status')?.errors?.['invalidValue']">Status must be 'available', 'pending' or 'sold'.</span>
+        <span *ngIf="newPetForm.get('status')?.errors?.['invalidValue']">Status must be 'available', 'pending' or
+          'sold'.</span>
       </div>
     </div>
 
